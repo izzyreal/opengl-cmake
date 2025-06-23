@@ -1,10 +1,9 @@
 cmake_minimum_required(VERSION 3.15)
-project(opengl_starter)
+project(opengl_starter LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Dependencies
 include(FetchContent)
 
 # GLFW
@@ -15,14 +14,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glfw)
 
-# GLAD (header-only, pre-generated)
-FetchContent_Declare(
-  glad
-  GIT_REPOSITORY https://github.com/Dav1dde/glad.git
-  GIT_TAG        v0.1.36
-)
-FetchContent_MakeAvailable(glad)
-
 # GLM
 FetchContent_Declare(
   glm
@@ -31,19 +22,37 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glm)
 
+# GLAD (pre-generated loader)
+FetchContent_Declare(
+  glad
+  GIT_REPOSITORY https://github.com/arrayfire/glad.git
+  GIT_TAG        master
+)
+FetchContent_MakeAvailable(glad)
+
 # Executable
 add_executable(opengl_starter main.cpp)
 
-# Include and link
-target_include_directories(opengl_starter PRIVATE
-  ${glad_SOURCE_DIR}/include
+# GLAD static lib from included source
+add_library(glad_static STATIC
+  "${glad_SOURCE_DIR}/src/glad.c"
+)
+target_include_directories(glad_static PUBLIC
+  "${glad_SOURCE_DIR}/include"
 )
 
+# Link libs
 target_link_libraries(opengl_starter
+  glad_static
   glfw
-  glad
 )
 
+target_include_directories(opengl_starter PRIVATE
+  "${glad_SOURCE_DIR}/include"
+  "${glm_SOURCE_DIR}"
+)
+
+# System OpenGL linking
 if (APPLE)
   target_link_libraries(opengl_starter "-framework OpenGL")
 elseif (UNIX)
